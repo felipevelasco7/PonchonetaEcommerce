@@ -7,10 +7,10 @@ Resources:
     Properties:
       Name: EcommerceALB
       Subnets:
-          - !ImportValue PonchonetaPublicSubnet1
-          - !ImportValue PonchonetaPublicSubnet2
+        - !ImportValue PonchonetaPublicSubnet1
+        - !ImportValue PonchonetaPublicSubnet2
       SecurityGroups:
-        - !ImportValue EcommerceEC2SG
+        - !ImportValue PonchonetaALBSecurityGroup
       Scheme: internet-facing
       Type: application
 
@@ -20,7 +20,7 @@ Resources:
       Name: EcommerceTG
       Port: 3000
       Protocol: HTTP
-      VpcId: !ImportValue EcommerceVPC
+      VpcId: !ImportValue PonchonetaVPC
       TargetType: instance
       HealthCheckPath: /
 

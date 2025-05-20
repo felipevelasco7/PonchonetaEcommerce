@@ -38,3 +38,8 @@ Outputs:
     Value: !Ref RDSSecurityGroup
     Export:
       Name: EcommerceRDSSG
+
+  PonchonetaALBSecurityGroup:
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: PonchonetaALBSecurityGroup

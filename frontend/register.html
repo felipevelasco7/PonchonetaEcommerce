@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro - Ponchoneta Fútbol</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <img src="PONCHONETA.PNG" alt="Logo Ponchoneta" class="logo" />
+    <h1>Registro de Usuario</h1>
+    <a href="index.html">🏠 Volver</a>
+  </header>
+
+  <main>
+    <form id="register-form">
+      <input type="text" id="username" placeholder="Nombre de usuario" required><br>
+      <input type="password" id="password" placeholder="Contraseña" required><br>
+      <button type="submit">Registrarse</button>
+    </form>
+    <p id="message"></p>
+  </main>
+
+  <script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      const res = await fetch('http://localhost:3000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      document.getElementById('message').textContent = data.error || 'Registro exitoso';
+    });
+  </script>
+</body>
+</html>

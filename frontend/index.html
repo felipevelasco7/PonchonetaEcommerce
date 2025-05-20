@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ponchoneta Fútbol</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <img src="PONCHONETA.PNG" alt="Logo Ponchoneta" class="logo" />
+    <h1>Ponchoneta Fútbol</h1>
+    <input type="text" id="search" placeholder="Buscar camisetas..." onkeyup="searchProducts()">
+    <a href="cart.html" id="cart">🛒 <span id="cart-count">0</span></a>
+  </header>
+
+  <nav>
+    <button onclick="filterBy('Entrega Inmediata')">Entrega Inmediata</button>
+    <button onclick="filterBy('Por Encargo')">Por Encargo</button>
+    <button onclick="filterByCategory('Jugador')">Versión Jugador</button>
+    <button onclick="filterByCategory('Retro')">Retro</button>
+    <button onclick="filterByCategory('Mystery')">Mystery Shirt</button>
+    <button onclick="filterByCategory('Medias')">Medias</button>
+  </nav>
+
+  <section id="filters">
+    <select id="tipo-equipo" onchange="applyFilters()">
+      <option value="">Tipo de equipo</option>
+      <option value="Club">Club</option>
+      <option value="Selección">Selección</option>
+    </select>
+
+    <select id="liga" onchange="applyFilters()">
+      <option value="">Liga / País</option>
+      <option value="Colombia">Colombia</option>
+      <option value="Inglaterra">Inglaterra</option>
+      <option value="España">España</option>
+      <option value="Italia">Italia</option>
+      <option value="Otros">Otros</option>
+    </select>
+  </section>
+
+  <main id="product-list"></main>
+
+  <script src="script.js"></script>
+</body>
+</html>

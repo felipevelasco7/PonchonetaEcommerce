@@ -1,0 +1,40 @@
+## 📄 Comandos de despliegue en terminal (CloudShell o local con AWS CLI)
+
+🔸 1. Desplegar VPC y subredes:
+```bash
+aws cloudformation deploy \
+  --template-file cloudformation/vpc.yaml \
+  --stack-name ecommerce-vpc \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+🔸 2. Crear los grupos de seguridad:
+```bash
+aws cloudformation deploy \
+  --template-file cloudformation/security-groups.yaml \
+  --stack-name ecommerce-sg \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+🔸 3. Desplegar base de datos RDS:
+```bash
+aws cloudformation deploy \
+  --template-file cloudformation/rds.yaml \
+  --stack-name ecommerce-rds \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+🔸 4. Crear Load Balancer y Target Group:
+```bash
+aws cloudformation deploy \
+  --template-file cloudformation/alb.yaml \
+  --stack-name ecommerce-alb \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+🔸 5. Crear Auto Scaling Group con Launch Template:
+```bash
+aws cloudformation deploy \
+  --template-file cloudformation/ec2-autoscaling.yaml \
+  --stack-name ecommerce-asg \
+  --capabilities CAPABILITY_NAMED_IAM

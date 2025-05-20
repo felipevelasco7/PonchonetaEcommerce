@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrito - Ponchoneta Fútbol</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <img src="PONCHONETA.PNG" alt="Logo Ponchoneta" class="logo" />
+    <h1>Ponchoneta Fútbol</h1>
+    <a href="index.html">🏠 Volver a la tienda</a>
+  </header>
+
+  <main>
+    <h2>Tu Carrito</h2>
+    <ul id="cart-items"></ul>
+    <p>Total: <strong id="cart-total">$0</strong></p>
+    <button onclick="checkout()">Finalizar Compra</button>
+  </main>
+
+  <script>
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    function renderCart() {
+      const itemsList = document.getElementById('cart-items');
+      const total = document.getElementById('cart-total');
+      itemsList.innerHTML = '';
+      let totalAmount = 0;
+
+      cart.forEach((p, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${p.name} - $${p.price}`;
+        const btn = document.createElement('button');
+        btn.textContent = '❌';
+        btn.onclick = () => removeItem(index);
+        li.appendChild(btn);
+        itemsList.appendChild(li);
+        totalAmount += parseFloat(p.price);
+      });
+
+      total.textContent = `$${totalAmount.toFixed(2)}`;
+    }
+
+    function removeItem(index) {
+      cart.splice(index, 1);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      renderCart();
+    }
+
+    function checkout() {
+      alert('Gracias por tu compra. Esto es una simulación.');
+      cart = [];
+      localStorage.removeItem('cart');
+      renderCart();
+    }
+
+    renderCart();
+  </script>
+</body>
+</html>

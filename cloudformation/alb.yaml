@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Application Load Balancer
+
+Resources:
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: EcommerceALB
+      Subnets:
+        - !ImportValue EcommercePublicSubnet
+      SecurityGroups:
+        - !ImportValue EcommerceEC2SG
+      Scheme: internet-facing
+      Type: application
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: EcommerceTG
+      Port: 3000
+      Protocol: HTTP
+      VpcId: !ImportValue EcommerceVPC
+      TargetType: instance
+      HealthCheckPath: /
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+Outputs:
+  ALBDNS:
+    Value: !GetAtt ALB.DNSName
+    Export:
+      Name: EcommerceALBDNS

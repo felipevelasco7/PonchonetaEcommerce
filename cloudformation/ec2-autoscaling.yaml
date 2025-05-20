@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 Auto Scaling con Launch Template
+
+Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: EcommerceLT
+      LaunchTemplateData:
+        InstanceType: t2.micro
+        ImageId: ami-0c02fb55956c7d316 # Amazon Linux 2 (verifica la región)
+        SecurityGroupIds:
+          - !ImportValue EcommerceEC2SG
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
+            yum install -y nodejs git mysql
+            git clone https://github.com/tuusuario/ecommerce-aws-deploy.git
+            cd ecommerce-aws-deploy/backend
+            npm install
+            node app.js
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !ImportValue EcommercePrivateSubnet
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: 1
+      MaxSize: 3
+      DesiredCapacity: 1
+      TargetGroupARNs:
+        - !ImportValue EcommerceTG

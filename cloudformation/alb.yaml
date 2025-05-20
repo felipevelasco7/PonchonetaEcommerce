@@ -7,7 +7,8 @@ Resources:
     Properties:
       Name: EcommerceALB
       Subnets:
-        - !ImportValue EcommercePublicSubnet
+          - !ImportValue PonchonetaPublicSubnet1
+          - !ImportValue PonchonetaPublicSubnet2
       SecurityGroups:
         - !ImportValue EcommerceEC2SG
       Scheme: internet-facing

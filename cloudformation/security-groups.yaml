@@ -28,6 +28,17 @@ Resources:
           ToPort: 3306
           SourceSecurityGroupId: !Ref EC2SecurityGroup
 
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permitir tráfico HTTP al ALB
+      VpcId: !ImportValue EcommerceVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
 Outputs:
   EC2SecurityGroup:
     Value: !Ref EC2SecurityGroup

@@ -31,7 +31,7 @@ Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Permitir tráfico HTTP al ALB
+      GroupDescription: Permitir trafico HTTP al ALB
       VpcId: !ImportValue EcommerceVPC
       SecurityGroupIngress:
         - IpProtocol: tcp

@@ -53,8 +53,9 @@ Outputs:
     Export:
       Name: PonchonetaALBDNS
 
-    PonchonetaTargetGroup:
+  PonchonetaTargetGroup:
     Description: ARN del Target Group
     Value: !Ref PonchonetaTargetGroup
     Export:
       Name: PonchonetaTargetGroup
+

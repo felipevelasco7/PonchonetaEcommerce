@@ -1,39 +1,27 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Security Groups for Ponchoneta App
+Description: Grupos de seguridad para Ponchoneta
+Parameters:
+  VPC:
+    Type: String
+    Description: VPC donde crear los SG
 
 Resources:
-
-  PonchonetaAppSG:
+  PonchonetaAppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP (3000) and SSH (22) to EC2
-      VpcId: !ImportValue PonchonetaVPC
+      GroupDescription: SG para las instancias EC2 del backend
+      VpcId: !Ref VPC
       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 3000
           ToPort: 3000
           CidrIp: 0.0.0.0/0
 
-  PonchonetaRDSSG:
+  PonchonetaALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow EC2 App to access RDS (MySQL)
-      VpcId: !ImportValue PonchonetaVPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3306
-          ToPort: 3306
-          SourceSecurityGroupId: !Ref PonchonetaAppSG
-
-  PonchonetaALBSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow HTTP access to ALB (port 80)
-      VpcId: !ImportValue PonchonetaVPC
+      GroupDescription: SG para el Load Balancer
+      VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -41,18 +29,14 @@ Resources:
           CidrIp: 0.0.0.0/0
 
 Outputs:
-
   PonchonetaAppSecurityGroup:
-    Value: !Ref PonchonetaAppSG
+    Description: SG para backend
+    Value: !Ref PonchonetaAppSecurityGroup
     Export:
       Name: PonchonetaAppSecurityGroup
 
-  PonchonetaRDSSecurityGroup:
-    Value: !Ref PonchonetaRDSSG
-    Export:
-      Name: PonchonetaRDSSecurityGroup
-
   PonchonetaALBSecurityGroup:
-    Value: !Ref PonchonetaALBSG
+    Description: SG para Load Balancer
+    Value: !Ref PonchonetaALBSecurityGroup
     Export:
       Name: PonchonetaALBSecurityGroup

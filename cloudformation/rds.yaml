@@ -1,33 +1,51 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Instancia RDS MySQL para la aplicación Ponchoneta
+Description: Base de datos RDS MySQL para Ponchoneta
+Parameters:
+  VPC:
+    Type: String
+    Description: VPC para RDS
+  Subnet1:
+    Type: String
+    Description: Subred pública 1
+  Subnet2:
+    Type: String
+    Description: Subred pública 2
+  DBUsername:
+    Type: String
+    Description: Usuario de la base de datos
+    Default: admin
+  DBPassword:
+    Type: String
+    Description: Contraseña para la base de datos
+    NoEcho: true
 
 Resources:
   PonchonetaDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: Subredes privadas para RDS
+      DBSubnetGroupDescription: Subnet group para RDS
       SubnetIds:
-        - !ImportValue PonchonetaPrivateSubnet
-        - !ImportValue PonchonetaPrivateSubnet2  # Esta debe estar definida en tu `vpc.yaml`
+        - !Ref Subnet1
+        - !Ref Subnet2
 
   PonchonetaDB:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBInstanceIdentifier: ponchoneta-db
       AllocatedStorage: 20
       DBInstanceClass: db.t3.micro
       Engine: mysql
       EngineVersion: 8.0
-      MasterUsername: admin
-      MasterUserPassword: MySecurePass123!
-      VPCSecurityGroups:
-        - !ImportValue PonchonetaRDSSecurityGroup
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
       DBSubnetGroupName: !Ref PonchonetaDBSubnetGroup
-      PubliclyAccessible: false
-      BackupRetentionPeriod: 0
+      VPCSecurityGroups:
+        - !ImportValue PonchonetaAppSecurityGroup
+      PubliclyAccessible: true
+      MultiAZ: false
 
 Outputs:
   PonchonetaDBEndpoint:
+    Description: Endpoint del RDS
     Value: !GetAtt PonchonetaDB.Endpoint.Address
     Export:
       Name: PonchonetaDBEndpoint

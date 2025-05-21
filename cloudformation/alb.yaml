@@ -1,46 +1,54 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Application Load Balancer
+Description: Application Load Balancer para Ponchoneta
+Parameters:
+  Subnet1:
+    Type: String
+    Description: Subred pública 1
+  Subnet2:
+    Type: String
+    Description: Subred pública 2
+  ALBSecurityGroup:
+    Type: String
+    Description: Security Group para el ALB
 
 Resources:
-  ALB:
+  PonchonetaALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: PonchonetaALB
       Subnets:
-        - !ImportValue PonchonetaPublicSubnet1
-        - !ImportValue PonchonetaPublicSubnet2
+        - !Ref Subnet1
+        - !Ref Subnet2
       SecurityGroups:
-        - !ImportValue PonchonetaALBSecurityGroup
+        - !Ref ALBSecurityGroup
       Scheme: internet-facing
       Type: application
 
-  TargetGroup:
+  PonchonetaTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: PonchonetaTG
+      Name: PonchonetaTargetGroup
       Port: 3000
       Protocol: HTTP
       VpcId: !ImportValue PonchonetaVPC
       TargetType: instance
-      HealthCheckPath: /
+      HealthCheckPath: /health
+      Matcher:
+        HttpCode: 200
 
-  Listener:
+  PonchonetaListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
-      LoadBalancerArn: !Ref ALB
-      Port: 80
-      Protocol: HTTP
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref TargetGroup
+          TargetGroupArn: !Ref PonchonetaTargetGroup
+      LoadBalancerArn: !Ref PonchonetaALB
+      Port: 80
+      Protocol: HTTP
 
 Outputs:
   PonchonetaALBDNS:
-    Value: !GetAtt ALB.DNSName
+    Description: DNS público del ALB
+    Value: !GetAtt PonchonetaALB.DNSName
     Export:
       Name: PonchonetaALBDNS
-
-  PonchonetaTargetGroup:
-    Value: !Ref TargetGroup
-    Export:
-      Name: PonchonetaTargetGroup

@@ -1,8 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: VPC con subredes públicas para Ponchoneta
-
+Description: VPC con dos subredes públicas para Ponchoneta
 Resources:
-  VPC:
+  PonchonetaVPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
@@ -12,96 +11,84 @@ Resources:
         - Key: Name
           Value: PonchonetaVPC
 
-  InternetGateway:
+  PonchonetaInternetGateway:
     Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PonchonetaIGW
 
-  AttachGateway:
+  PonchonetaVPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId: !Ref VPC
-      InternetGatewayId: !Ref InternetGateway
-
-  PublicSubnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      CidrBlock: 10.0.1.0/24
-      AvailabilityZone: us-east-1a
-      MapPublicIpOnLaunch: true
-
-  PublicSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      CidrBlock: 10.0.2.0/24
-      AvailabilityZone: us-east-1b
-      MapPublicIpOnLaunch: true
-
-  PrivateSubnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      CidrBlock: 10.0.3.0/24
-      AvailabilityZone: us-east-1a
-      MapPublicIpOnLaunch: false
-
-  PrivateSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      CidrBlock: 10.0.4.0/24
-      AvailabilityZone: us-east-1b
-      MapPublicIpOnLaunch: false
-
-
-  RouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-
-  PublicRoute:
-    Type: AWS::EC2::Route
-    DependsOn: AttachGateway
-    Properties:
-      RouteTableId: !Ref RouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
-
-  SubnetRouteTableAssociation1:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet1
-      RouteTableId: !Ref RouteTable
-
-  SubnetRouteTableAssociation2:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet2
-      RouteTableId: !Ref RouteTable
-
-Outputs:
-  PonchonetaVPC:
-    Value: !Ref VPC
-    Export:
-      Name: PonchonetaVPC
+      VpcId: !Ref PonchonetaVPC
+      InternetGatewayId: !Ref PonchonetaInternetGateway
 
   PonchonetaPublicSubnet1:
-    Value: !Ref PublicSubnet1
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref PonchonetaVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PonchonetaPublicSubnet1
+
+  PonchonetaPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref PonchonetaVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PonchonetaPublicSubnet2
+
+  PonchonetaPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref PonchonetaVPC
+      Tags:
+        - Key: Name
+          Value: PonchonetaPublicRouteTable
+
+  PonchonetaPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: PonchonetaVPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PonchonetaPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref PonchonetaInternetGateway
+
+  PonchonetaSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PonchonetaPublicSubnet1
+      RouteTableId: !Ref PonchonetaPublicRouteTable
+
+  PonchonetaSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PonchonetaPublicSubnet2
+      RouteTableId: !Ref PonchonetaPublicRouteTable
+
+Outputs:
+  PonchonetaPublicSubnet1:
+    Description: Subnet pública 1
+    Value: !Ref PonchonetaPublicSubnet1
     Export:
       Name: PonchonetaPublicSubnet1
 
   PonchonetaPublicSubnet2:
-    Value: !Ref PublicSubnet2
+    Description: Subnet pública 2
+    Value: !Ref PonchonetaPublicSubnet2
     Export:
       Name: PonchonetaPublicSubnet2
 
-  PonchonetaPrivateSubnet:
-    Value: !Ref PrivateSubnet1
+  PonchonetaVPC:
+    Description: VPC principal
+    Value: !Ref PonchonetaVPC
     Export:
-      Name: PonchonetaPrivateSubnet
-
-  PonchonetaPrivateSubnet2:
-    Value: !Ref PrivateSubnet2
-    Export:
-      Name: PonchonetaPrivateSubnet2
-
+      Name: PonchonetaVPC

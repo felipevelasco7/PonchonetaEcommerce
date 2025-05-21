@@ -36,37 +36,26 @@ Resources:
     Properties:
       LaunchTemplateName: PonchonetaLaunchTemplate
       LaunchTemplateData:
-        ImageId: ami-09f4814ae750baed6 # <-- NUEVA AMI ID ACTUALIZADA AQUÍ
+        ImageId: ami-09f4814ae750baed6 # AMI ID actualizada
         InstanceType: t3.micro
         SecurityGroupIds:
           - !Ref AppSecurityGroup
         IamInstanceProfile:
-          Name: !Ref ExistingInstanceProfileName # Usamos el Instance Profile existente
+          Name: !Ref ExistingInstanceProfileName
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash -xe
             exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
             echo "--- Iniciando UserData Script ---"
-
-            # Actualizar sistema e instalar dependencias
             yum update -y
             echo "--- Instalando Node.js y Git ---"
             curl -sL https://rpm.nodesource.com/setup_16.x | bash - 
             yum install -y nodejs git
-
-            # --- SECCIÓN CloudWatch Agent COMENTADA/ELIMINADA ---
-            # El rol EMR_EC2_DefaultRole probablemente no tiene permisos para CloudWatch Agent.
-            # echo "--- Configurando CloudWatch Agent (si los permisos lo permiten) ---"
-            # ... (todo el bloque del agente) ...
-            # echo "Advertencia: No se pudo configurar/iniciar CloudWatch Agent..."
-            # ------------------------------------------------------
-
             echo "--- Clonando repositorio ---"
             cd /home/ec2-user
             git clone https://github.com/felipevelasco7/PonchonetaEcommerce.git
             chown -R ec2-user:ec2-user PonchonetaEcommerce
             cd PonchonetaEcommerce/backend
-
             echo "--- Configurando variables de entorno para la aplicacion ---"
             echo "DB_HOST=${DBEndpoint}" > .env
             echo "DB_NAME=${DBName}" >> .env
@@ -74,20 +63,28 @@ Resources:
             echo "DB_PASSWORD=${DBPasswordValue}" >> .env
             echo "PORT=3000" >> .env
             chown ec2-user:ec2-user .env
-
             echo "--- Instalando dependencias de la aplicacion y PM2 ---"
             npm install
             npm install -g pm2
-
             echo "--- Iniciando aplicacion con PM2 ---"
             sudo -u ec2-user pm2 start app.js --name ponchoneta-backend -o app.log -e app.err.log --log-date-format "YYYY-MM-DD HH:mm Z"
             sudo -u ec2-user pm2 startup
             sudo -u ec2-user pm2 save
-
             echo "--- UserData Script Finalizado ---"
-        Tags:
-          - Key: Name
-            Value: PonchonetaLaunchTemplate
+        # La seccion de Tags que estaba aqui DENTRO de LaunchTemplateData se mueve ABAJO a TagSpecifications
+      TagSpecifications: # <-- LOS TAGS SE DEFINEN AQUÍ PARA EL LAUNCH TEMPLATE
+        - ResourceType: launch-template
+          Tags:
+            - Key: Name
+              Value: PonchonetaLaunchTemplate
+        # Si quieres que las instancias lanzadas por este template también tengan tags específicos,
+        # puedes añadir otra especificación para 'instance'.
+        # - ResourceType: instance 
+        #   Tags:
+        #     - Key: Name
+        #       Value: PonchonetaAppInstanceFromLT (esto seria un tag en la instancia, no en el ASG)
+        #     - Key: Environment
+        #       Value: DevFromLT
 
   PonchonetaAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -105,10 +102,10 @@ Resources:
         - !Ref TargetGroup
       HealthCheckType: ELB
       HealthCheckGracePeriod: 300
-      Tags:
+      Tags: # Estos son los tags para el Auto Scaling Group en si y para las instancias que lanza (PropagateAtLaunch: true)
         - Key: Name
           Value: PonchonetaASG
-          PropagateAtLaunch: true
+          PropagateAtLaunch: true # Importante para que las instancias hereden este tag
 
 Outputs:
   AutoScalingGroupName:

@@ -2,10 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Security Groups for Ponchoneta App
 
 Resources:
+
   PonchonetaAppSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP and SSH to EC2
+      GroupDescription: Allow HTTP (3000) and SSH (22) to EC2
       VpcId: !ImportValue PonchonetaVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -20,7 +21,7 @@ Resources:
   PonchonetaRDSSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow EC2 access to RDS
+      GroupDescription: Allow EC2 App to access RDS (MySQL)
       VpcId: !ImportValue PonchonetaVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -31,7 +32,7 @@ Resources:
   PonchonetaALBSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP access to ALB
+      GroupDescription: Allow HTTP access to ALB (port 80)
       VpcId: !ImportValue PonchonetaVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -40,6 +41,7 @@ Resources:
           CidrIp: 0.0.0.0/0
 
 Outputs:
+
   PonchonetaAppSecurityGroup:
     Value: !Ref PonchonetaAppSG
     Export:

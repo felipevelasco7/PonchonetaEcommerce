@@ -17,8 +17,8 @@ Resources:
             yum update -y
             curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
             yum install -y nodejs git mysql
-            git clone https://github.com/tuusuario/ponchoneta-ecommerce-final.git
-            cd ponchoneta-ecommerce-final/backend
+            git clone https://github.com/felipevelasco7/PonchonetaEcommerce.git
+            cd PonchonetaEcommerce/backend
             npm install
             node app.js
 

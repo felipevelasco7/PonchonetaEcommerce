@@ -8,7 +8,7 @@ Resources:
       DBSubnetGroupDescription: Subredes privadas para RDS
       SubnetIds:
         - !ImportValue PonchonetaPrivateSubnet
-        - !ImportValue PonchonetaPublicSubnet2  # opcional, pero asegúrate que exista o quítalo
+        - !ImportValue PonchonetaPublicSubnet1  # si no tienes otra privada
 
   PonchonetaDB:
     Type: AWS::RDS::DBInstance

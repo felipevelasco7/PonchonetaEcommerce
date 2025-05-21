@@ -1,19 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Instancia RDS MySQL para la aplicación
+Description: Instancia RDS MySQL para la aplicación Ponchoneta
 
 Resources:
-  DBSubnetGroup:
+  PonchonetaDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Subredes privadas para RDS
       SubnetIds:
-        - !ImportValue EcommercePrivateSubnet
-        - !ImportValue EcommercePublicSubnet
+        - !ImportValue PonchonetaPrivateSubnet
+        - !ImportValue PonchonetaPublicSubnet2  # opcional, pero asegúrate que exista o quítalo
 
-  EcommerceDB:
+  PonchonetaDB:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBInstanceIdentifier: ecommerce-db
+      DBInstanceIdentifier: ponchoneta-db
       AllocatedStorage: 20
       DBInstanceClass: db.t3.micro
       Engine: mysql
@@ -21,12 +21,13 @@ Resources:
       MasterUsername: admin
       MasterUserPassword: MySecurePass123!
       VPCSecurityGroups:
-        - !ImportValue EcommerceRDSSG
-      DBSubnetGroupName: !Ref DBSubnetGroup
+        - !ImportValue PonchonetaRDSSecurityGroup
+      DBSubnetGroupName: !Ref PonchonetaDBSubnetGroup
       PubliclyAccessible: false
+      BackupRetentionPeriod: 0
 
 Outputs:
-  EcommerceDBEndpoint:
-    Value: !GetAtt EcommerceDB.Endpoint.Address
+  PonchonetaDBEndpoint:
+    Value: !GetAtt PonchonetaDB.Endpoint.Address
     Export:
-      Name: EcommerceDBEndpoint
+      Name: PonchonetaDBEndpoint

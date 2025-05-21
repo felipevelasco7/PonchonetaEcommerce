@@ -14,10 +14,6 @@ Resources:
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-        - Key: Name
-          Value: PonchonetaIGW
 
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -32,9 +28,6 @@ Resources:
       CidrBlock: 10.0.1.0/24
       AvailabilityZone: us-east-1a
       MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: PonchonetaPublicSubnet1
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
@@ -43,17 +36,19 @@ Resources:
       CidrBlock: 10.0.2.0/24
       AvailabilityZone: us-east-1b
       MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: PonchonetaPublicSubnet2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: us-east-1a
+      MapPublicIpOnLaunch: false
 
   RouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: PonchonetaPublicRT
 
   PublicRoute:
     Type: AWS::EC2::Route
@@ -90,3 +85,8 @@ Outputs:
     Value: !Ref PublicSubnet2
     Export:
       Name: PonchonetaPublicSubnet2
+
+  PonchonetaPrivateSubnet:
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: PonchonetaPrivateSubnet

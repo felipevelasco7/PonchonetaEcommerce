@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ponchoneta Fútbol</title>
-  <link rel="stylesheet" href="styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+
+  <!-- Tipografía oficial -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+
+  <!-- Estilos personalizados -->
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
   <header>
     <img src="PONCHONETA.PNG" alt="Logo Ponchoneta" class="logo" />
     <h1>Ponchoneta Fútbol</h1>
-    <input type="text" id="search" placeholder="Buscar camisetas..." onkeyup="searchProducts()">
+    <input type="text" id="search" placeholder="Buscar camisetas..." onkeyup="searchProducts()" />
     <a href="cart.html" id="cart">🛒 <span id="cart-count">0</span></a>
   </header>
 
@@ -42,6 +47,10 @@
   </section>
 
   <main id="product-list"></main>
+
+  <footer style="background-color: #4a605b; color: white; text-align: center; padding: 15px;">
+    <p>&copy; 2025 Ponchoneta Fútbol. Todos los derechos reservados.</p>
+  </footer>
 
   <script src="script.js"></script>
 </body>

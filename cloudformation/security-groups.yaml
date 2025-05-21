@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Grupos de seguridad para la aplicación
+Description: Grupos de seguridad para la aplicación Ponchoneta
 
 Resources:
-  EC2SecurityGroup:
+  PonchonetaAppSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Permitir HTTP y SSH
-      VpcId: !ImportValue EcommerceVPC
+      GroupDescription: Permitir HTTP y SSH a EC2
+      VpcId: !ImportValue PonchonetaVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -17,22 +17,22 @@ Resources:
           ToPort: 3000
           CidrIp: 0.0.0.0/0
 
-  RDSSecurityGroup:
+  PonchonetaRDSSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Permitir acceso a RDS desde EC2
-      VpcId: !ImportValue EcommerceVPC
+      VpcId: !ImportValue PonchonetaVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          SourceSecurityGroupId: !Ref EC2SecurityGroup
+          SourceSecurityGroupId: !Ref PonchonetaAppSG
 
-  ALBSecurityGroup:
+  PonchonetaALBSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Permitir trafico HTTP al ALB
-      VpcId: !ImportValue EcommerceVPC
+      GroupDescription: Permitir tráfico HTTP al ALB
+      VpcId: !ImportValue PonchonetaVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -40,17 +40,17 @@ Resources:
           CidrIp: 0.0.0.0/0
 
 Outputs:
-  EC2SecurityGroup:
-    Value: !Ref EC2SecurityGroup
+  PonchonetaAppSecurityGroup:
+    Value: !Ref PonchonetaAppSG
     Export:
-      Name: EcommerceEC2SG
+      Name: PonchonetaAppSecurityGroup
 
-  RDSSecurityGroup:
-    Value: !Ref RDSSecurityGroup
+  PonchonetaRDSSecurityGroup:
+    Value: !Ref PonchonetaRDSSG
     Export:
-      Name: EcommerceRDSSG
+      Name: PonchonetaRDSSecurityGroup
 
   PonchonetaALBSecurityGroup:
-    Value: !Ref ALBSecurityGroup
+    Value: !Ref PonchonetaALBSG
     Export:
       Name: PonchonetaALBSecurityGroup

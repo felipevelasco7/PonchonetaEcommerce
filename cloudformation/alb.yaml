@@ -5,7 +5,7 @@ Resources:
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: EcommerceALB
+      Name: PonchonetaALB
       Subnets:
         - !ImportValue PonchonetaPublicSubnet1
         - !ImportValue PonchonetaPublicSubnet2
@@ -17,7 +17,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: EcommerceTG
+      Name: PonchonetaTG
       Port: 3000
       Protocol: HTTP
       VpcId: !ImportValue PonchonetaVPC
@@ -35,8 +35,12 @@ Resources:
           TargetGroupArn: !Ref TargetGroup
 
 Outputs:
-  ALBDNS:
+  PonchonetaALBDNS:
     Value: !GetAtt ALB.DNSName
     Export:
-      Name: EcommerceALBDNS
+      Name: PonchonetaALBDNS
 
+  PonchonetaTargetGroup:
+    Value: !Ref TargetGroup
+    Export:
+      Name: PonchonetaTargetGroup

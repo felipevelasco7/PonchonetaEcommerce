@@ -80,7 +80,7 @@ echo "Target Group ARN: $TARGET_GROUP_ARN, ALB DNS: http://$ALB_DNS_NAME"
 
 # --- Paso 5: Crear Auto Scaling Group con EC2 ---
 echo -e "\n${YELLOW}Paso 5: Creando Auto Scaling Group y EC2 (ponchoneta-app)...${NC}"
-EXISTING_INSTANCE_PROFILE_NAME="EMR_EC2_DefaultRole" 
+# EXISTING_INSTANCE_PROFILE_NAME="EMR_EC2_DefaultRole" # Ya no se necesita si se elimina del YAML
 
 aws cloudformation deploy \
   --template-file cloudformation/ec2-autoscaling.yaml \
@@ -96,7 +96,7 @@ aws cloudformation deploy \
     DBName=$DB_NAME \
     DBUser=$DB_USER \
     DBPasswordValue="$DB_PASSWORD" \
-    ExistingInstanceProfileName=$EXISTING_INSTANCE_PROFILE_NAME 
+    # ExistingInstanceProfileName=$EXISTING_INSTANCE_PROFILE_NAME # <-- Parámetro quitado
 echo -e "${GREEN}Auto Scaling Group y EC2 creados exitosamente.${NC}"
 
 echo -e "\n${GREEN}--- ¡DESPLIEGUE COMPLETO! ---${NC}"

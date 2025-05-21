@@ -31,7 +31,7 @@ Este proyecto incluye un script para automatizar la creación de todos los stack
     *(Si ya tienes los archivos, omite este paso)*
     ```bash
     # git clone <URL_DE_ESTE_REPOSITORIO_CON_LAS_PLANTILLAS_CFN_Y_SCRIPT>
-    # cd ponchoneta-ecommerce-final
+    # cd PonchonetaEcommerce/
     ```
 
 2.  **Hacer el script ejecutable:**

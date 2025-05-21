@@ -52,3 +52,9 @@ Outputs:
     Value: !GetAtt PonchonetaALB.DNSName
     Export:
       Name: PonchonetaALBDNS
+
+    PonchonetaTargetGroup:
+    Description: ARN del Target Group
+    Value: !Ref PonchonetaTargetGroup
+    Export:
+      Name: PonchonetaTargetGroup

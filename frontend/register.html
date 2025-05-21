@@ -2,39 +2,274 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Registro - Ponchoneta Fútbol</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Nuevo Usuario - Ponchoneta Fútbol</title>
+  <link rel="stylesheet" href="styles.css"> <!-- Asegúrate que styles.css tiene estilos para formularios -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: #f4f8eb;
+      color: #182126;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    header {
+      width: 100%;
+      background-color: #4a605b;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-sizing: border-box;
+    }
+
+    header img.logo {
+      height: 50px;
+    }
+
+    header h1 {
+      font-size: 1.6em;
+      margin: 0;
+      flex-grow: 1;
+      text-align: center; /* Centrar título si el logo está a un lado */
+    }
+    header a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: 4px;
+      background-color: #51af8e;
+      transition: background-color 0.2s ease;
+    }
+    header a:hover {
+      background-color: #3c8c70;
+    }
+
+    main.form-container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(24, 33, 38, 0.15);
+      width: 100%;
+      max-width: 500px;
+      margin-top: 30px;
+      margin-bottom: 30px;
+    }
+
+    .form-container h2 {
+      color: #4a605b;
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: 700;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #182126;
+      font-weight: 500;
+      font-size: 0.95em;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="password"],
+    .form-group input[type="tel"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #bac1b9;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-family: 'Orbitron', sans-serif; /* Heredar fuente */
+      font-size: 1em;
+      background-color: #f4f8eb;
+      color: #182126;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #51af8e;
+      box-shadow: 0 0 0 2px rgba(81, 175, 142, 0.3);
+    }
+
+    button[type="submit"] {
+      background-color: #51af8e;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1.1em;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      width: 100%;
+      font-family: 'Orbitron', sans-serif; /* Heredar fuente */
+    }
+
+    button[type="submit"]:hover {
+      background-color: #4a605b;
+    }
+
+    #message {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: 500;
+    }
+    #message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    #message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    footer {
+      width: 100%;
+      background-color: #4a605b;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      margin-top: auto; /* Empuja el footer hacia abajo */
+      box-sizing: border-box;
+    }
+  </style>
 </head>
 <body>
   <header>
     <img src="PONCHONETA.PNG" alt="Logo Ponchoneta" class="logo" />
     <h1>Registro de Usuario</h1>
-    <a href="index.html">🏠 Volver</a>
+    <a href="index.html">🏠 Volver a la Tienda</a>
   </header>
 
-  <main>
+  <main class="form-container">
+    <h2>Crea tu Cuenta en Ponchoneta Fútbol</h2>
     <form id="register-form">
-      <input type="text" id="username" placeholder="Nombre de usuario" required><br>
-      <input type="password" id="password" placeholder="Contraseña" required><br>
-      <button type="submit">Registrarse</button>
+      <div class="form-group">
+        <label for="fullName">Nombre Completo:</label>
+        <input type="text" id="fullName" name="fullName" placeholder="Ej: Lionel Messi" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Correo Electrónico:</label>
+        <input type="email" id="email" name="email" placeholder="tu.correo@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="username">Nombre de Usuario (para iniciar sesión):</label>
+        <input type="text" id="username" name="username" placeholder="Ej: laPulga10" required minlength="4">
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Contraseña:</label>
+        <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required minlength="6">
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirmar Contraseña:</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repite tu contraseña" required>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Teléfono (Opcional):</label>
+        <input type="tel" id="phone" name="phone" placeholder="Ej: 3001234567">
+      </div>
+      
+      <button type="submit" id="submitButton">Registrarse</button>
     </form>
-    <p id="message"></p>
+    <div id="message"></div>
   </main>
 
+  <footer>
+    <p>© 2025 Ponchoneta Fútbol. Todos los derechos reservados.</p>
+  </footer>
+
   <script>
-    document.getElementById('register-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const registerForm = document.getElementById('register-form');
+    const messageDiv = document.getElementById('message');
+    const submitButton = document.getElementById('submitButton');
+
+    registerForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      messageDiv.textContent = '';
+      messageDiv.className = ''; // Limpiar clases previas
+      submitButton.disabled = true;
+      submitButton.textContent = 'Registrando...';
+
+      const fullName = document.getElementById('fullName').value;
+      const email = document.getElementById('email').value;
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const phone = document.getElementById('phone').value;
 
-      const res = await fetch('http://localhost:3000/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+      if (password !== confirmPassword) {
+        messageDiv.textContent = 'Las contraseñas no coinciden.';
+        messageDiv.className = 'error';
+        submitButton.disabled = false;
+        submitButton.textContent = 'Registrarse';
+        return;
+      }
 
-      const data = await res.json();
-      document.getElementById('message').textContent = data.error || 'Registro exitoso';
+      const userData = {
+        fullName,
+        email,
+        username,
+        password,
+        phone // El backend debe estar preparado para recibir estos campos
+      };
+
+      try {
+        // IMPORTANTE:
+        // Si tu backend Node.js/Express sirve este archivo HTML,
+        // puedes usar una RUTA RELATIVA para la API.
+        // Ejemplo: const response = await fetch('/api/users/register', { ... });
+        //
+        // Si este archivo HTML se sirve de forma independiente (ej. S3 sin CloudFront para enrutamiento),
+        // necesitarías la URL completa del ALB aquí. Pero es menos ideal.
+        // const apiUrl = 'http://TU_ALB_DNS_AQUI/api/users/register'; // NO RECOMENDADO SI PUEDES EVITARLO
+
+        const response = await fetch('/register', { // Asume que el backend sirve el frontend y esta ruta está configurada en el backend
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          messageDiv.textContent = data.message || '¡Registro exitoso! Ahora puedes iniciar sesión.';
+          messageDiv.className = 'success';
+          registerForm.reset(); // Limpiar el formulario
+          // Opcionalmente redirigir al login: window.location.href = '/login.html';
+        } else {
+          messageDiv.textContent = data.error || `Error en el registro (${response.status}). Intenta de nuevo.`;
+          messageDiv.className = 'error';
+        }
+      } catch (error) {
+        console.error('Error en la solicitud de registro:', error);
+        messageDiv.textContent = 'Ocurrió un error de red. Por favor, intenta más tarde.';
+        messageDiv.className = 'error';
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Registrarse';
+      }
     });
   </script>
 </body>

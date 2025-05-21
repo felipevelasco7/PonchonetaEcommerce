@@ -1,42 +1,72 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Grupos de seguridad para Ponchoneta
+Description: Grupos de seguridad para la aplicación Ponchoneta
+
 Parameters:
-  VPC:
-    Type: String
-    Description: VPC donde crear los SG
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+    Description: ID de la VPC donde crear los Security Groups.
 
 Resources:
-  PonchonetaAppSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: SG para las instancias EC2 del backend
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
-          CidrIp: 0.0.0.0/0
-
+  # Security Group para el Application Load Balancer
   PonchonetaALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: SG para el Load Balancer
-      VpcId: !Ref VPC
+      GroupDescription: Permite tráfico HTTP (80) desde internet al ALB
+      VpcId: !Ref VPCID
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
+          CidrIp: 0.0.0.0/0 # Permite acceso HTTP desde cualquier IP
+      Tags:
+        - Key: Name
+          Value: PonchonetaALBSG
+
+  # Security Group para las instancias EC2 de la aplicación
+  PonchonetaAppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permite tráfico en el puerto 3000 solo desde el ALB
+      VpcId: !Ref VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000 # Puerto de la aplicación Node.js
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref PonchonetaALBSecurityGroup # Solo desde el ALB
+      Tags:
+        - Key: Name
+          Value: PonchonetaAppSG
+
+  # Security Group para la instancia RDS
+  PonchonetaRDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permite tráfico MySQL (3306) solo desde el AppSecurityGroup
+      VpcId: !Ref VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306 # Puerto de MySQL
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref PonchonetaAppSecurityGroup # Solo desde las instancias de la app
+      Tags:
+        - Key: Name
+          Value: PonchonetaRDSSG
 
 Outputs:
+  PonchonetaALBSecurityGroup:
+    Description: ID del Security Group del ALB
+    Value: !Ref PonchonetaALBSecurityGroup
+    Export:
+      Name: PonchonetaALBSecurityGroup
+
   PonchonetaAppSecurityGroup:
-    Description: SG para backend
+    Description: ID del Security Group de las instancias de aplicación
     Value: !Ref PonchonetaAppSecurityGroup
     Export:
       Name: PonchonetaAppSecurityGroup
 
-  PonchonetaALBSecurityGroup:
-    Description: SG para Load Balancer
-    Value: !Ref PonchonetaALBSecurityGroup
+  PonchonetaRDSSecurityGroup:
+    Description: ID del Security Group de la instancia RDS
+    Value: !Ref PonchonetaRDSSecurityGroup
     Export:
-      Name: PonchonetaALBSecurityGroup
+      Name: PonchonetaRDSSecurityGroup

@@ -1,14 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Application Load Balancer para Ponchoneta
+
 Parameters:
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: ID de la VPC donde se desplegará el ALB
   Subnet1:
-    Type: String
-    Description: Subred pública 1
+    Type: AWS::EC2::Subnet::Id
+    Description: ID de la Subred pública 1 para el ALB
   Subnet2:
-    Type: String
-    Description: Subred pública 2
+    Type: AWS::EC2::Subnet::Id
+    Description: ID de la Subred pública 2 para el ALB
   ALBSecurityGroup:
-    Type: String
+    Type: AWS::EC2::SecurityGroup::Id
     Description: Security Group para el ALB
 
 Resources:
@@ -23,18 +27,29 @@ Resources:
         - !Ref ALBSecurityGroup
       Scheme: internet-facing
       Type: application
+      Tags:
+        - Key: Name
+          Value: PonchonetaALB
 
   PonchonetaTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: PonchonetaTargetGroup
-      Port: 3000
+      Port: 3000 # Puerto donde la aplicación escucha en las instancias EC2
       Protocol: HTTP
-      VpcId: !ImportValue PonchonetaVPC
+      VpcId: !Ref VPC
       TargetType: instance
-      HealthCheckPath: /health
+      HealthCheckPath: /health # Ruta para el health check
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: 200
+        HttpCode: "200" # Código HTTP esperado para un health check exitoso
+      Tags:
+        - Key: Name
+          Value: PonchonetaTargetGroup
 
   PonchonetaListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -43,7 +58,7 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref PonchonetaTargetGroup
       LoadBalancerArn: !Ref PonchonetaALB
-      Port: 80
+      Port: 80 # Puerto HTTP
       Protocol: HTTP
 
 Outputs:
@@ -58,4 +73,3 @@ Outputs:
     Value: !Ref PonchonetaTargetGroup
     Export:
       Name: PonchonetaTargetGroup
-

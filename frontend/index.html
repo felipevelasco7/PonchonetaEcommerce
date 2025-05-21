@@ -3,13 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ponchoneta Fútbol</title>
+  <title>Ponchoneta Fútbol - Tienda Oficial</title>
 
   <!-- Tipografía oficial -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
 
   <!-- Estilos personalizados -->
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Estilos adicionales para enlaces de usuario/registro */
+    .user-actions {
+      display: flex;
+      align-items: center;
+      gap: 15px; /* Espacio entre el carrito y los enlaces de usuario */
+    }
+    .user-actions a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500; /* Un poco más delgado que Orbitron 700 */
+      font-size: 0.9em;
+      padding: 8px 12px;
+      border-radius: 4px;
+      background-color: #51af8e; /* Un color que combine */
+      transition: background-color 0.2s ease;
+    }
+    .user-actions a:hover {
+      background-color: #3c8c70; /* Un tono más oscuro al pasar el mouse */
+    }
+    #user-greeting {
+        color: white;
+        font-size: 0.9em;
+        font-weight: 500;
+    }
+  </style>
 </head>
 <body>
 
@@ -17,7 +43,17 @@
     <img src="PONCHONETA.PNG" alt="Logo Ponchoneta" class="logo" />
     <h1>Ponchoneta Fútbol</h1>
     <input type="text" id="search" placeholder="Buscar camisetas..." onkeyup="searchProducts()" />
-    <a href="cart.html" id="cart">🛒 <span id="cart-count">0</span></a>
+    
+    <div class="user-actions">
+      <a href="cart.html" id="cart-link">🛒 <span id="cart-count">0</span></a>
+      <!-- Contenedor para el saludo o enlaces de login/registro -->
+      <div id="auth-container">
+        <!-- Por defecto, mostrar enlace de Login y Registro -->
+        <a href="login.html" id="login-link">Iniciar Sesión</a>
+        <a href="register.html" id="register-link">Registrarse</a>
+      </div>
+      <div id="user-greeting" style="display:none;"></div>
+    </div>
   </header>
 
   <nav>
@@ -46,12 +82,60 @@
     </select>
   </section>
 
-  <main id="product-list"></main>
+  <main id="product-list">
+    <!-- Los productos se cargarán aquí mediante JavaScript -->
+  </main>
 
   <footer style="background-color: #4a605b; color: white; text-align: center; padding: 15px;">
-    <p>&copy; 2025 Ponchoneta Fútbol. Todos los derechos reservados.</p>
+    <p>© 2025 Ponchoneta Fútbol. Todos los derechos reservados.</p>
   </footer>
 
   <script src="script.js"></script>
+  <script>
+    // Lógica para actualizar el header según el estado de autenticación
+    // Esto es un ejemplo básico. En una aplicación real, usarías tokens (JWT), localStorage/sessionStorage.
+    
+    function checkLoginStatus() {
+      const authContainer = document.getElementById('auth-container');
+      const userGreetingDiv = document.getElementById('user-greeting');
+      
+      // Simulación: Suponemos que guardas el nombre de usuario en localStorage al hacer login
+      const loggedInUser = localStorage.getItem('loggedInUser'); 
+
+      if (loggedInUser) {
+        authContainer.style.display = 'none'; // Ocultar Login/Register
+        userGreetingDiv.innerHTML = `¡Hola, ${loggedInUser}! <a href="#" onclick="logout()" style="color:#51af8e; text-decoration:underline;">Cerrar Sesión</a>`;
+        userGreetingDiv.style.display = 'block';
+      } else {
+        authContainer.style.display = 'flex'; // Mostrar Login/Register (flex para que los botones estén en línea)
+        userGreetingDiv.style.display = 'none';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('loggedInUser'); // Eliminar la "sesión"
+      // Podrías también llamar a un endpoint de logout en el backend si es necesario
+      // fetch('/logout', { method: 'POST' }).then(() => checkLoginStatus());
+      checkLoginStatus(); // Actualizar la UI
+      // Opcionalmente, redirigir a la página de inicio o login
+      // window.location.href = 'index.html'; 
+    }
+
+    // Llama a esta función cuando la página cargue para establecer el estado inicial
+    document.addEventListener('DOMContentLoaded', () => {
+      checkLoginStatus();
+      // Aquí también iría la lógica para cargar productos, actualizar carrito, etc.,
+      // que probablemente ya tienes en script.js
+      // updateCartCount(); // Ejemplo si tienes una función para el contador del carrito
+    });
+
+    // NOTA: Necesitarás una página login.html y la lógica de login en tu script.js
+    // que guarde 'loggedInUser' en localStorage al iniciar sesión exitosamente.
+    // Por ejemplo, en tu lógica de login exitoso:
+    // localStorage.setItem('loggedInUser', username);
+    // checkLoginStatus(); // Actualizar UI
+    // window.location.href = 'index.html'; // Redirigir a la página principal
+
+  </script>
 </body>
 </html>

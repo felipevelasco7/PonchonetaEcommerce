@@ -1,51 +1,79 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Base de datos RDS MySQL para Ponchoneta
+
 Parameters:
   VPC:
-    Type: String
-    Description: VPC para RDS
+    Type: AWS::EC2::VPC::Id
+    Description: ID de la VPC para la instancia RDS
   Subnet1:
-    Type: String
-    Description: Subred pública 1
+    Type: AWS::EC2::Subnet::Id
+    Description: ID de la Subred 1 para el grupo de subredes de RDS
   Subnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: ID de la Subred 2 para el grupo de subredes de RDS
+  DBName:
     Type: String
-    Description: Subred pública 2
+    Default: ponchonetaDB
+    Description: Nombre de la base de datos
   DBUsername:
     Type: String
-    Description: Usuario de la base de datos
     Default: admin
+    Description: Usuario maestro de la base de datos
   DBPassword:
     Type: String
-    Description: Contraseña para la base de datos
+    Description: Contraseña para el usuario maestro de la base de datos
     NoEcho: true
+  AppSecurityGroupForDBAccess: # Este SG es el que tendrá acceso a la BD
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group de las instancias de aplicación que accederán a la BD
+  RDSSecurityGroup: # Este es el SG que se asignará a la instancia RDS
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group a asignar a la instancia RDS
 
 Resources:
   PonchonetaDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: Subnet group para RDS
+      DBSubnetGroupDescription: Grupo de subredes para la instancia RDS de Ponchoneta
       SubnetIds:
         - !Ref Subnet1
         - !Ref Subnet2
+      Tags:
+        - Key: Name
+          Value: PonchonetaDBSubnetGroup
 
   PonchonetaDB:
     Type: AWS::RDS::DBInstance
     Properties:
-      AllocatedStorage: 20
+      DBName: !Ref DBName
+      AllocatedStorage: "20" # Mínimo 20 GiB para db.t3.micro
       DBInstanceClass: db.t3.micro
       Engine: mysql
-      EngineVersion: 8.0
+      EngineVersion: "8.0" # Especificar una versión compatible
       MasterUsername: !Ref DBUsername
       MasterUserPassword: !Ref DBPassword
       DBSubnetGroupName: !Ref PonchonetaDBSubnetGroup
       VPCSecurityGroups:
-        - !ImportValue PonchonetaAppSecurityGroup
-      PubliclyAccessible: true
-      MultiAZ: false
+        - !Ref RDSSecurityGroup # Asigna el SG específico de RDS
+      PubliclyAccessible: true # Necesario si las subredes son públicas y no hay NAT Gateway para acceso de UserData
+      MultiAZ: false # Para cumplir con limitaciones de sandbox y db.t3.micro
+      StorageType: gp2
+      Tags:
+        - Key: Name
+          Value: PonchonetaDBInstance
+      # BackupRetentionPeriod: 0 # Deshabilitar backups automáticos para sandbox si es necesario ahorrar costos/recursos (No recomendado en prod)
+      # DeletionProtection: false # Para facilitar la eliminación en sandbox (No recomendado en prod)
+
 
 Outputs:
   PonchonetaDBEndpoint:
-    Description: Endpoint del RDS
+    Description: Endpoint de la instancia RDS
     Value: !GetAtt PonchonetaDB.Endpoint.Address
     Export:
       Name: PonchonetaDBEndpoint
+
+  PonchonetaDBPort:
+    Description: Puerto de la instancia RDS
+    Value: !GetAtt PonchonetaDB.Endpoint.Port
+    Export:
+      Name: PonchonetaDBPort

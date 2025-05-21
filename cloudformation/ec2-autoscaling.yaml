@@ -1,39 +1,165 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Auto Scaling Group para instancias EC2 de Ponchoneta
+
 Parameters:
   VPC:
-    Type: String
+    Type: AWS::EC2::VPC::Id
   Subnet1:
-    Type: String
+    Type: AWS::EC2::Subnet::Id
   Subnet2:
-    Type: String
+    Type: AWS::EC2::Subnet::Id
   AppSecurityGroup:
-    Type: String
-  TargetGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+  TargetGroup: # ARN del Target Group del ALB
     Type: String
   DBEndpoint:
     Type: String
-Resources:
-  PonchonetaLaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
-    Properties:
-      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2 para us-east-1
-      InstanceType: t3.micro
-      SecurityGroups:
-        - !Ref AppSecurityGroup
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          yum update -y
-          curl -sL https://rpm.nodesource.com/setup_14.x | bash -
-          yum install -y nodejs git
-          cd /home/ec2-user
-          git clone https://github.com/felipevelasco7/PonchonetaEcommerce.git
-          cd PonchonetaEcommerce/backend
-          sed -i "s/localhost/${DBEndpoint}/g" config/sequelize.js
-          npm install
-          node app.js &
+    Description: Endpoint de la base de datos RDS
+  DBName:
+    Type: String
+    Description: Nombre de la base de datos RDS
+  DBUser:
+    Type: String
+    Description: Usuario de la base de datos RDS
+  DBPasswordValue:
+    Type: String
+    Description: Contraseña de la base de datos RDS (se pasa desde el script)
+    NoEcho: true
 
+Resources:
+  # IAM Role para que las instancias EC2 puedan acceder a SSM y CloudWatch Logs (opcionalmente)
+  PonchonetaInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore # Para Session Manager y GetParameter
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy # Para el agente de CloudWatch
+      Tags:
+        - Key: Name
+          Value: PonchonetaInstanceRole
+
+  PonchonetaInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref PonchonetaInstanceRole
+
+  PonchonetaLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: PonchonetaLaunchTemplate
+      LaunchTemplateData:
+        ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}' # Última AMI Amazon Linux 2 para la región del stack (us-east-1 por defecto)
+        InstanceType: t3.micro
+        SecurityGroupIds:
+          - !Ref AppSecurityGroup
+        IamInstanceProfile:
+          Arn: !GetAtt PonchonetaInstanceProfile.Arn
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+            echo "--- Iniciando UserData Script ---"
+
+            # Actualizar sistema e instalar dependencias
+            yum update -y
+            echo "--- Instalando Node.js y Git ---"
+            curl -sL https://rpm.nodesource.com/setup_16.x | bash - # Usar Node 16.x o 18.x
+            yum install -y nodejs git amazon-cloudwatch-agent
+
+            # Configurar y arrancar CloudWatch Agent (opcional, pero recomendado para logs)
+            echo "--- Configurando CloudWatch Agent ---"
+            cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+            {
+              "agent": {
+                "run_as_user": "root"
+              },
+              "logs": {
+                "logs_collected": {
+                  "files": {
+                    "collect_list": [
+                      {
+                        "file_path": "/var/log/user-data.log",
+                        "log_group_name": "/ec2/ponchoneta/user-data",
+                        "log_stream_name": "{instance_id}/user-data.log",
+                        "timezone": "UTC"
+                      },
+                      {
+                        "file_path": "/home/ec2-user/PonchonetaEcommerce/backend/app.log",
+                        "log_group_name": "/ec2/ponchoneta/application",
+                        "log_stream_name": "{instance_id}/app.log",
+                        "timezone": "UTC"
+                      },
+                      {
+                        "file_path": "/home/ec2-user/.pm2/logs/ponchoneta-backend-out.log",
+                        "log_group_name": "/ec2/ponchoneta/pm2-out",
+                        "log_stream_name": "{instance_id}/pm2-out.log",
+                        "timezone": "UTC"
+                      },
+                      {
+                        "file_path": "/home/ec2-user/.pm2/logs/ponchoneta-backend-error.log",
+                        "log_group_name": "/ec2/ponchoneta/pm2-error",
+                        "log_stream_name": "{instance_id}/pm2-error.log",
+                        "timezone": "UTC"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+            EOF
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+            systemctl enable amazon-cloudwatch-agent
+            systemctl start amazon-cloudwatch-agent
+
+            # Clonar el repositorio
+            echo "--- Clonando repositorio ---"
+            cd /home/ec2-user
+            git clone https://github.com/felipevelasco7/PonchonetaEcommerce.git
+            chown -R ec2-user:ec2-user PonchonetaEcommerce
+            cd PonchonetaEcommerce/backend
+
+            # Crear archivo .env o configurar variables de entorno para la aplicación
+            # Es más seguro usar Secrets Manager en producción
+            echo "--- Configurando variables de entorno para la aplicación ---"
+            echo "DB_HOST=${DBEndpoint}" > .env
+            echo "DB_NAME=${DBName}" >> .env
+            echo "DB_USER=${DBUser}" >> .env
+            echo "DB_PASSWORD=${DBPasswordValue}" >> .env
+            echo "PORT=3000" >> .env
+            chown ec2-user:ec2-user .env
+
+            # Reemplazar el host de la base de datos en sequelize.js (si aún se usa localhost allí)
+            # Esta es una alternativa si no usas .env para la config de sequelize
+            # sed -i "s/localhost/${DBEndpoint}/g" config/sequelize.js
+            # sed -i "s/database_name_here/${DBName}/g" config/sequelize.js # Si necesitas cambiar el nombre de la DB también
+            # sed -i "s/username_here/${DBUser}/g" config/sequelize.js
+            # sed -i "s/password_here/${DBPasswordValue}/g" config/sequelize.js
+
+            # Instalar dependencias y PM2
+            echo "--- Instalando dependencias de la aplicación y PM2 ---"
+            npm install
+            npm install -g pm2
+
+            # Iniciar la aplicación con PM2
+            echo "--- Iniciando aplicación con PM2 ---"
+            # Asegúrate que app.js es el punto de entrada correcto y está en el directorio actual
+            # El usuario ec2-user debe poder escribir logs en .pm2/logs
+            sudo -u ec2-user pm2 start app.js --name ponchoneta-backend -o app.log -e app.err.log --log-date-format "YYYY-MM-DD HH:mm Z"
+            sudo -u ec2-user pm2 startup # Para que PM2 se inicie al reiniciar el sistema
+            sudo -u ec2-user pm2 save   # Guardar la lista de procesos de PM2
+
+            echo "--- UserData Script Finalizado ---"
+        Tags:
+          - Key: Name
+            Value: PonchonetaLaunchTemplate
 
   PonchonetaAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -41,11 +167,20 @@ Resources:
       VPCZoneIdentifier:
         - !Ref Subnet1
         - !Ref Subnet2
-      LaunchConfigurationName: !Ref PonchonetaLaunchConfiguration
-      MinSize: 1
-      MaxSize: 2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref PonchonetaLaunchTemplate
+        Version: !GetAtt PonchonetaLaunchTemplate.LatestVersionNumber
+      MinSize: "1"
+      MaxSize: "2"
+      DesiredCapacity: "1"
       TargetGroupARNs:
-        - !Ref TargetGroup
+        - !Ref TargetGroup # ARN del Target Group del ALB
+      HealthCheckType: ELB # Usar health checks del ELB
+      HealthCheckGracePeriod: 300 # Tiempo para que la instancia inicie y pase health checks
+      Tags:
+        - Key: Name
+          Value: PonchonetaASG
+          PropagateAtLaunch: true
 
 Outputs:
   AutoScalingGroupName:

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Auto Scaling Group para instancias EC2 de Ponchoneta (Usando Rol IAM existente, AMI hardcodeada)
+Description: Auto Scaling Group para instancias EC2 de Ponchoneta (AMI hardcodeada, SIN Instance Profile)
 
 Parameters:
   VPC:
@@ -25,10 +25,10 @@ Parameters:
     Type: String
     Description: Contraseña de la base de datos RDS (se pasa desde el script)
     NoEcho: true
-  ExistingInstanceProfileName:
-    Type: String
-    Description: El nombre del Instance Profile existente que las instancias EC2 deben usar.
-    Default: EMR_EC2_DefaultRole
+  # ExistingInstanceProfileName: # Comentado ya que no lo usaremos
+  #   Type: String
+  #   Description: El nombre del Instance Profile existente que las instancias EC2 deben usar.
+  #   Default: EMR_EC2_DefaultRole
 
 Resources:
   PonchonetaLaunchTemplate:
@@ -40,8 +40,8 @@ Resources:
         InstanceType: t3.micro
         SecurityGroupIds:
           - !Ref AppSecurityGroup
-        IamInstanceProfile:
-          Name: !Ref ExistingInstanceProfileName
+        # IamInstanceProfile: # <-- SECCIÓN COMENTADA/ELIMINADA
+        #   Name: !Ref ExistingInstanceProfileName 
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash -xe
@@ -71,20 +71,11 @@ Resources:
             sudo -u ec2-user pm2 startup
             sudo -u ec2-user pm2 save
             echo "--- UserData Script Finalizado ---"
-        # La seccion de Tags que estaba aqui DENTRO de LaunchTemplateData se mueve ABAJO a TagSpecifications
-      TagSpecifications: # <-- LOS TAGS SE DEFINEN AQUÍ PARA EL LAUNCH TEMPLATE
+      TagSpecifications: 
         - ResourceType: launch-template
           Tags:
             - Key: Name
               Value: PonchonetaLaunchTemplate
-        # Si quieres que las instancias lanzadas por este template también tengan tags específicos,
-        # puedes añadir otra especificación para 'instance'.
-        # - ResourceType: instance 
-        #   Tags:
-        #     - Key: Name
-        #       Value: PonchonetaAppInstanceFromLT (esto seria un tag en la instancia, no en el ASG)
-        #     - Key: Environment
-        #       Value: DevFromLT
 
   PonchonetaAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -102,10 +93,10 @@ Resources:
         - !Ref TargetGroup
       HealthCheckType: ELB
       HealthCheckGracePeriod: 300
-      Tags: # Estos son los tags para el Auto Scaling Group en si y para las instancias que lanza (PropagateAtLaunch: true)
+      Tags: 
         - Key: Name
           Value: PonchonetaASG
-          PropagateAtLaunch: true # Importante para que las instancias hereden este tag
+          PropagateAtLaunch: true
 
 Outputs:
   AutoScalingGroupName:

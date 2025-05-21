@@ -1,7 +1,7 @@
 const { Sequelize } = require('sequelize');
 
 const sequelize = new Sequelize('ecommerce', 'root', '', {
-  host: 'ponchoneta-db.cmbn2jnrhzmq.us-east-1.rds.amazonaws.com',
+  host: 'localhost',
   dialect: 'mysql'
 });
 

@@ -28,11 +28,12 @@ Resources:
           curl -sL https://rpm.nodesource.com/setup_14.x | bash -
           yum install -y nodejs git
           cd /home/ec2-user
-          git clone https://github.com/tu-usuario/ponchoneta-ecommerce-final.git
-          cd ponchoneta-ecommerce-final/backend
+          git clone https://github.com/felipevelasco7/PonchonetaEcommerce.git
+          cd PonchonetaEcommerce/backend
           sed -i "s/localhost/${DBEndpoint}/g" config/sequelize.js
           npm install
           node app.js &
+
 
   PonchonetaAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup

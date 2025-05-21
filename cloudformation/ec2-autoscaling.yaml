@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Auto Scaling Group para instancias EC2 de Ponchoneta (AMI hardcodeada, SIN Instance Profile)
+Description: Auto Scaling Group para instancias EC2 de Ponchoneta (Usando Rol IAM existente, AMI hardcodeada)
 
 Parameters:
   VPC:
@@ -10,25 +10,20 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   AppSecurityGroup:
     Type: AWS::EC2::SecurityGroup::Id
-  TargetGroup: # ARN del Target Group del ALB
+  TargetGroup: 
     Type: String
   DBEndpoint:
     Type: String
-    Description: Endpoint de la base de datos RDS
   DBName:
     Type: String
-    Description: Nombre de la base de datos RDS
   DBUser:
     Type: String
-    Description: Usuario de la base de datos RDS
   DBPasswordValue:
     Type: String
-    Description: Contraseña de la base de datos RDS (se pasa desde el script)
-    NoEcho: true
-  # ExistingInstanceProfileName: # Comentado ya que no lo usaremos
-  #   Type: String
-  #   Description: El nombre del Instance Profile existente que las instancias EC2 deben usar.
-  #   Default: EMR_EC2_DefaultRole
+    NoEcho: true # Importante para que no se loguee en eventos de CloudFormation
+  ExistingInstanceProfileName:
+    Type: String
+    Default: EMR_EC2_DefaultRole
 
 Resources:
   PonchonetaLaunchTemplate:
@@ -36,46 +31,72 @@ Resources:
     Properties:
       LaunchTemplateName: PonchonetaLaunchTemplate
       LaunchTemplateData:
-        ImageId: ami-09f4814ae750baed6 # AMI ID actualizada
+        ImageId: ami-09f4814ae750baed6 
         InstanceType: t3.micro
         SecurityGroupIds:
           - !Ref AppSecurityGroup
-        # IamInstanceProfile: # <-- SECCIÓN COMENTADA/ELIMINADA
-        #   Name: !Ref ExistingInstanceProfileName 
+        IamInstanceProfile:
+          Name: !Ref ExistingInstanceProfileName
         UserData:
-          Fn::Base64: !Sub |
-            #!/bin/bash -xe
-            exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
-            echo "--- Iniciando UserData Script ---"
-            yum update -y
-            echo "--- Instalando Node.js y Git ---"
-            curl -sL https://rpm.nodesource.com/setup_16.x | bash - 
-            yum install -y nodejs git
-            echo "--- Clonando repositorio ---"
-            cd /home/ec2-user
-            git clone https://github.com/felipevelasco7/PonchonetaEcommerce.git
-            chown -R ec2-user:ec2-user PonchonetaEcommerce
-            cd PonchonetaEcommerce/backend
-            echo "--- Configurando variables de entorno para la aplicacion ---"
-            echo "DB_HOST=${DBEndpoint}" > .env
-            echo "DB_NAME=${DBName}" >> .env
-            echo "DB_USER=${DBUser}" >> .env
-            echo "DB_PASSWORD=${DBPasswordValue}" >> .env
-            echo "PORT=3000" >> .env
-            chown ec2-user:ec2-user .env
-            echo "--- Instalando dependencias de la aplicacion y PM2 ---"
-            npm install
-            npm install -g pm2
-            echo "--- Iniciando aplicacion con PM2 ---"
-            sudo -u ec2-user pm2 start app.js --name ponchoneta-backend -o app.log -e app.err.log --log-date-format "YYYY-MM-DD HH:mm Z"
-            sudo -u ec2-user pm2 startup
-            sudo -u ec2-user pm2 save
-            echo "--- UserData Script Finalizado ---"
-      TagSpecifications: 
-        - ResourceType: launch-template
-          Tags:
-            - Key: Name
-              Value: PonchonetaLaunchTemplate
+          Fn::Base64: !Sub
+            - |
+              #!/bin/bash -xe
+              exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+              echo "--- Iniciando UserData Script ---"
+              echo "DBPasswordValue recibido: ${PassedDBPassword}" # Para depurar, ¡REMOVER EN PRODUCCIÓN!
+
+              yum update -y
+              echo "--- Instalando Node.js y Git ---"
+              curl -sL https://rpm.nodesource.com/setup_16.x | bash - 
+              yum install -y nodejs git
+
+              echo "--- Clonando repositorio ---"
+              cd /home/ec2-user
+              git clone https://github.com/felipevelasco7/PonchonetaEcommerce.git
+              chown -R ec2-user:ec2-user PonchonetaEcommerce
+              cd PonchonetaEcommerce/backend
+
+              echo "--- Configurando variables de entorno para la aplicacion ---"
+              echo "DB_HOST=${DBEndpoint}" > .env
+              echo "DB_NAME=${DBName}" >> .env
+              echo "DB_USER=${DBUser}" >> .env
+              # Importante usar comillas para asegurar que se manejen caracteres especiales en la contraseña
+              echo "DB_PASSWORD=\"${PassedDBPassword}\"" >> .env 
+              echo "PORT=3000" >> .env
+              chown ec2-user:ec2-user .env
+              
+              echo "Contenido de .env (excepto contraseña para log):"
+              grep -v "DB_PASSWORD" .env || echo ".env no encontrado o vacío (sin DB_PASSWORD)"
+
+              echo "--- Instalando dependencias de la aplicacion y PM2 ---"
+              npm install
+              npm install -g pm2
+
+              echo "--- Iniciando aplicacion con PM2 ---"
+              sudo -u ec2-user pm2 start app.js --name ponchoneta-backend -o app.log -e app.err.log --log-date-format "YYYY-MM-DD HH:mm Z"
+              
+              echo "--- Configurando PM2 startup script ---"
+              # El siguiente comando genera el comando real que se debe ejecutar
+              STARTUP_COMMAND_OUTPUT=$(sudo -u ec2-user pm2 startup systemd -u ec2-user --hp /home/ec2-user)
+              echo "Salida de pm2 startup: $STARTUP_COMMAND_OUTPUT"
+              ACTUAL_STARTUP_COMMAND=$(echo "$STARTUP_COMMAND_OUTPUT" | grep "sudo env PATH")
+
+              if [ -n "$ACTUAL_STARTUP_COMMAND" ]; then
+                  echo "Ejecutando comando de inicio de PM2: $ACTUAL_STARTUP_COMMAND"
+                  eval "$ACTUAL_STARTUP_COMMAND" 
+              else
+                  echo "Error: No se pudo generar el comando de inicio de PM2 de la salida."
+                  # Intento alternativo si el grep falla
+                  if sudo -u ec2-user pm2 startup systemd -u ec2-user --hp /home/ec2-user; then
+                      echo "PM2 startup ejecutado (método alternativo)."
+                  else
+                      echo "Fallo el método alternativo de pm2 startup."
+                  fi
+              fi
+              
+              sudo -u ec2-user pm2 save
+              echo "--- UserData Script Finalizado ---"
+            - PassedDBPassword: !Ref DBPasswordValue # Mapeo para usar en el script UserData
 
   PonchonetaAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup

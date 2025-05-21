@@ -45,6 +45,15 @@ Resources:
       AvailabilityZone: us-east-1a
       MapPublicIpOnLaunch: false
 
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.4.0/24
+      AvailabilityZone: us-east-1b
+      MapPublicIpOnLaunch: false
+
+
   RouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -90,3 +99,9 @@ Outputs:
     Value: !Ref PrivateSubnet1
     Export:
       Name: PonchonetaPrivateSubnet
+
+  PonchonetaPrivateSubnet2:
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: PonchonetaPrivateSubnet2
+

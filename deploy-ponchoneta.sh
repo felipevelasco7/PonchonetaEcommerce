@@ -1,105 +1,66 @@
 #!/bin/bash
 
-set -euo pipefail
+set -e
 
-echo "🚀 Desplegando Ponchoneta E-commerce en AWS desde cero..."
-
-# Clonar repo si no existe la carpeta
-if [ ! -d "PonchonetaEcommerce" ]; then
-  echo "Clonando repositorio..."
-  git clone https://github.com/felipevelasco7/PonchonetaEcommerce.git
-fi
-cd PonchonetaEcommerce
-
-# Función para obtener un output exportado de CloudFormation
-get_stack_output() {
-  local stack_name=$1
-  local output_key=$2
-  aws cloudformation describe-stacks --stack-name "$stack_name" --query "Stacks[0].Outputs[?OutputKey=='$output_key'].OutputValue" --output text
-}
-
-# 1. Crear VPC y subnets
-echo "🔹 Paso 1: Crear VPC y subnets públicas..."
+echo "1. Creando stack VPC..."
 aws cloudformation deploy \
   --template-file cloudformation/vpc.yaml \
   --stack-name ponchoneta-vpc \
   --capabilities CAPABILITY_NAMED_IAM
 
-# Obtener IDs de VPC y subnets
-VPC_ID=$(get_stack_output ponchoneta-vpc PonchonetaVPC)
-SUBNET1=$(get_stack_output ponchoneta-vpc PonchonetaPublicSubnet1)
-SUBNET2=$(get_stack_output ponchoneta-vpc PonchonetaPublicSubnet2)
+echo "2. Extrayendo IDs VPC y Subnets..."
+VPC_ID=$(aws cloudformation describe-stacks --stack-name ponchoneta-vpc \
+  --query "Stacks[0].Outputs[?OutputKey=='PonchonetaVPC'].OutputValue" --output text)
 
-echo "VPC creada: $VPC_ID"
-echo "Subnets: $SUBNET1, $SUBNET2"
+SUBNET1=$(aws cloudformation describe-stacks --stack-name ponchoneta-vpc \
+  --query "Stacks[0].Outputs[?OutputKey=='PonchonetaPublicSubnet1'].OutputValue" --output text)
 
-# Validar subnets
-if [ "$SUBNET1" == "$SUBNET2" ] || [ -z "$SUBNET1" ] || [ -z "$SUBNET2" ]; then
-  echo "ERROR: Subnets inválidas o iguales. Revisa la creación de la VPC."
+SUBNET2=$(aws cloudformation describe-stacks --stack-name ponchoneta-vpc \
+  --query "Stacks[0].Outputs[?OutputKey=='PonchonetaPublicSubnet2'].OutputValue" --output text)
+
+echo "VPC_ID: $VPC_ID"
+echo "SUBNET1: $SUBNET1"
+echo "SUBNET2: $SUBNET2"
+
+if [[ -z "$SUBNET1" || -z "$SUBNET2" || -z "$VPC_ID" ]]; then
+  echo "Error: No se pudieron obtener VPC o Subnets. Abortando."
   exit 1
 fi
 
-# 2. Crear Security Groups
-echo "🔹 Paso 2: Crear Security Groups..."
-aws cloudformation deploy \
-  --template-file cloudformation/security-groups.yaml \
-  --stack-name ponchoneta-sg \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides VPC=$VPC_ID
+echo "3. Creando Security Group para ALB..."
 
-# Obtener ID Security Group ALB (ajusta el nombre según plantilla)
-ALB_SG=$(get_stack_output ponchoneta-sg PonchonetaALBSecurityGroup)
-if [ -z "$ALB_SG" ]; then
-  echo "ERROR: No se pudo obtener el Security Group para ALB."
-  exit 1
+# Crear Security Group con nombre PonchonetaALBSG, si no existe
+SG_NAME="PonchonetaALBSG"
+
+# Verificar si existe el SG
+SG_ID=$(aws ec2 describe-security-groups \
+  --filters "Name=group-name,Values=$SG_NAME" "Name=vpc-id,Values=$VPC_ID" \
+  --query "SecurityGroups[0].GroupId" --output text)
+
+if [[ "$SG_ID" == "None" ]]; then
+  SG_ID=$(aws ec2 create-security-group \
+    --group-name $SG_NAME \
+    --description "Security Group para Application Load Balancer Ponchoneta" \
+    --vpc-id $VPC_ID \
+    --query 'GroupId' --output text)
+  echo "Security Group creado: $SG_ID"
+
+  echo "Agregando regla de ingreso HTTP (puerto 80) para todo el mundo..."
+  aws ec2 authorize-security-group-ingress \
+    --group-id $SG_ID \
+    --protocol tcp \
+    --port 80 \
+    --cidr 0.0.0.0/0
+else
+  echo "Security Group ya existe: $SG_ID"
 fi
-echo "Security Group ALB: $ALB_SG"
 
-# 3. Crear RDS
-echo "🔹 Paso 3: Crear base de datos RDS MySQL..."
-read -s -p "Ingresa la contraseña para la base de datos RDS: " RDS_PASSWORD
-echo
+echo "4. Desplegando stack ALB..."
 
-aws cloudformation deploy \
-  --template-file cloudformation/rds.yaml \
-  --stack-name ponchoneta-rds \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides VPC=$VPC_ID DBPassword=$RDS_PASSWORD
-
-# 4. Crear ALB
-echo "🔹 Paso 4: Crear Application Load Balancer (ALB)..."
 aws cloudformation deploy \
   --template-file cloudformation/alb.yaml \
   --stack-name ponchoneta-alb \
   --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides Subnet1=$SUBNET1 Subnet2=$SUBNET2 ALBSecurityGroup=$ALB_SG
+  --parameter-overrides Subnet1=$SUBNET1 Subnet2=$SUBNET2 ALBSecurityGroup=$SG_ID
 
-# Obtener Target Group ARN para paso siguiente
-TARGET_GROUP_ARN=$(get_stack_output ponchoneta-alb PonchonetaTargetGroup)
-if [ -z "$TARGET_GROUP_ARN" ]; then
-  echo "ERROR: No se pudo obtener el ARN del Target Group."
-  exit 1
-fi
-echo "Target Group ARN: $TARGET_GROUP_ARN"
-
-# 5. Crear Auto Scaling Group con EC2
-echo "🔹 Paso 5: Crear Auto Scaling Group con instancias EC2..."
-
-aws cloudformation deploy \
-  --template-file cloudformation/autoscaling.yaml \
-  --stack-name ponchoneta-app \
-  --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides \
-      VPC=$VPC_ID \
-      Subnet1=$SUBNET1 \
-      Subnet2=$SUBNET2 \
-      SecurityGroup=$ALB_SG \
-      TargetGroupARN=$TARGET_GROUP_ARN
-
-echo "✅ Despliegue completado exitosamente."
-echo "Puedes acceder a la aplicación vía el DNS del ALB."
-
-ALB_DNS=$(get_stack_output ponchoneta-alb PonchonetaALBDNS)
-echo "URL: http://$ALB_DNS"
-
-exit 0
+echo "Despliegue completado con éxito."

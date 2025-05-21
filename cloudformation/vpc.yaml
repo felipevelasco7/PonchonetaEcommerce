@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: VPC con subred pública y privada
+Description: VPC con subredes públicas para Ponchoneta
 
 Resources:
   VPC:
@@ -10,10 +10,14 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: EcommerceVPC
+          Value: PonchonetaVPC
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PonchonetaIGW
 
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -21,7 +25,7 @@ Resources:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
 
-    PublicSubnet1:
+  PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
@@ -43,34 +47,40 @@ Resources:
         - Key: Name
           Value: PonchonetaPublicSubnet2
 
-
-  PrivateSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      CidrBlock: 10.0.2.0/24
-      AvailabilityZone: !Select [1, !GetAZs ""]
-
-  PublicRouteTable:
+  RouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PonchonetaPublicRT
 
   PublicRoute:
     Type: AWS::EC2::Route
     DependsOn: AttachGateway
     Properties:
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId: !Ref RouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-  PublicSubnetRouteTableAssociation:
+  SubnetRouteTableAssociation1:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PublicSubnet
-      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref RouteTable
+
+  SubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref RouteTable
 
 Outputs:
+  PonchonetaVPC:
+    Value: !Ref VPC
+    Export:
+      Name: PonchonetaVPC
+
   PonchonetaPublicSubnet1:
     Value: !Ref PublicSubnet1
     Export:
@@ -80,9 +90,3 @@ Outputs:
     Value: !Ref PublicSubnet2
     Export:
       Name: PonchonetaPublicSubnet2
-
-  PonchonetaVPC:
-    Value: !Ref VPC
-    Export:
-      Name: PonchonetaVPC
-

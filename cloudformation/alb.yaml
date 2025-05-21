@@ -39,3 +39,4 @@ Outputs:
     Value: !GetAtt ALB.DNSName
     Export:
       Name: EcommerceALBDNS
+

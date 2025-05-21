@@ -21,13 +21,28 @@ Resources:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
 
-  PublicSubnet:
+    PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.1.0/24
+      AvailabilityZone: us-east-1a
       MapPublicIpOnLaunch: true
-      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: PonchonetaPublicSubnet1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: us-east-1b
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PonchonetaPublicSubnet2
+
 
   PrivateSubnet:
     Type: AWS::EC2::Subnet
@@ -56,17 +71,18 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
 
 Outputs:
-  VPC:
+  PonchonetaPublicSubnet1:
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: PonchonetaPublicSubnet1
+
+  PonchonetaPublicSubnet2:
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: PonchonetaPublicSubnet2
+
+  PonchonetaVPC:
     Value: !Ref VPC
     Export:
-      Name: EcommerceVPC
+      Name: PonchonetaVPC
 
-  PublicSubnet:
-    Value: !Ref PublicSubnet
-    Export:
-      Name: EcommercePublicSubnet
-
-  PrivateSubnet:
-    Value: !Ref PrivateSubnet
-    Export:
-      Name: EcommercePrivateSubnet
